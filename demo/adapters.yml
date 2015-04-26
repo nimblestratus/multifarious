@@ -1,0 +1,6 @@
+version: 1
+endpoints:
+  "POST /*/containers/create":
+    pre: [multifarious]
+adapters:
+  multifarious: http://multifarious/create
