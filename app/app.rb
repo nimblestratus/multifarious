@@ -4,6 +4,7 @@ require 'sinatra/json'
 require 'redis'
 require 'json'
 require 'rbconfig'
+require 'pp'
 
 
 # get the architecture
@@ -20,6 +21,7 @@ ARCH = RbConfig::CONFIG['arch'].split("-").first
 redis = Redis.new()             # settings picked up from REDIS_URL ENV variable
 
 set :port, 80
+set :bind, '0.0.0.0'
 
 # Powerstrip will send something like this:
 # {
@@ -32,12 +34,18 @@ set :port, 80
 #     }
 # }
 
-POST '/' do
+post '/' do
   args = JSON.parse(request.body.read)
-  image = args["ClientRequest"]["Body"]["Image"]
+  body = args["ClientRequest"]["Body"]
+  x=JSON.parse(body)
+  image = x["Image"]
+  puts "looking for #{image}"
   args["ModifiedClientRequest"] = args["ClientRequest"]
   args.delete("ClientRequest")
   new_img = redis.hget("multifarious:#{image}", ARCH)
-  args["ModifiedClientRequest"]["Body"]["Image"] = new_img unless new_img.nil?
+  unless new_img.nil?
+    x["Image"] = new_img
+    args["ModifiedClientRequest"]["Body"]=x.to_json
+  end
   json(args)
 end
